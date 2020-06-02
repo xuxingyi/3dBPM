@@ -150,4 +150,8 @@ del BunchData, BunchDataEnd, BunchDataFirst, BunchMatrix, BunchPhase0, BunchPhas
     LutMatrix, tmp1, xx, z1
 
 # build the final LUT of all bunches, using the final T value, pickup #1
-TurnSize = np.floor
+TurnSize = np.floor(T*720).astype("int32")
+TurnNum = np.floor(len(Data)/720/T).astype("int32") - 1
+# collect the all bunches data together using the new T value
+DataIndexS = np.floor(np.arange(TurnNum) * 720 * T).astype("int32") + DataIndexStart
+DataIndexE = DataIndexS + BunchSize
