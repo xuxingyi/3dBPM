@@ -145,13 +145,79 @@ BunchPhase = BunchPhase0 - BunchPhaseFit + 1000
 x = np.arange(len(BunchPhase))
 z1 = np.polyfit(x, BunchPhase, 1)
 T = T + z1[0] / 720 / 50
-
 del BunchData, BunchDataEnd, BunchDataFirst, BunchMatrix, BunchPhase0, BunchPhaseFit, DataIndexS, DataIndexE, LUT, \
     LutMatrix, tmp1, xx, z1
+
 
 # build the final LUT of all bunches, using the final T value, pickup #1
 TurnSize = np.floor(T*720).astype("int32")
 TurnNum = np.floor(len(Data)/720/T).astype("int32") - 1
 # collect the all bunches data together using the new T value
 DataIndexS = np.floor(np.arange(TurnNum) * 720 * T).astype("int32") + DataIndexStart
-DataIndexE = DataIndexS + BunchSize
+DataIndexE = DataIndexS + TurnSize
+TurnData = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
+TurnTime = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
+for i in range(TurnNum):
+    TurnData[:, i] = Data[DataIndexS[i]:DataIndexE[i]].reshape(TurnSize,)
+    TurnTime[:, i] = np.arange(DataIndexS[i], DataIndexE[i]).reshape(
+        TurnSize,) - i * T * 720
+del Data
+# combine all data (different turns) together
+NewTime = np.sort(TurnTime.reshape((TurnSize * TurnNum,)))
+tmpIndex = np.argsort(TurnTime.reshape((TurnSize * TurnNum,)))
+tmpWave = np.reshape(TurnData, (TurnSize * TurnNum,))
+del TurnTime, TurnData
+NewWave = tmpWave[tmpIndex]
+NewTime = NewTime * 50
+del tmpIndex, tmpWave
+
+xx = np.arange(0.1, T * 50 * 720, 0.1)
+f = interp1d(NewTime, NewWave, kind="linear", bounds_error=False, fill_value=0)
+tmp = f(xx)
+tmp[-10000:] = tmp[-20000:-10000]
+windowSize = 100
+b = (1 / windowSize) * np.ones((windowSize,))
+a = 1
+LUTtmp = signal.filtfilt(b, a, tmp)
+N = np.floor(len(LUTtmp) / 720).astype("int32")
+LUT1 = LUTtmp[:N * 720].reshape((N, 720), order="F")
+np.save("LUT1", LUT1)
+del tmp, LUTtmp, NewTime, NewWave, f, b, LUT1
+
+# build the final LUT of all bunches, using the final T value, pickup #3
+Data = np.array(load_data["BPM3"], dtype="int32")[PeakIndex - 10:].copy()
+Baseline = np.mean(Data[BaselineIndex], dtype="float64")
+Data = Data - Baseline
+TurnSize = np.floor(T*720).astype("int32")
+TurnNum = np.floor(len(Data)/720/T).astype("int32") - 1
+# collect the all bunches data together using the new T value
+DataIndexS = np.floor(np.arange(TurnNum) * 720 * T).astype("int32") + DataIndexStart
+DataIndexE = DataIndexS + TurnSize
+TurnData = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
+TurnTime = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
+for i in range(TurnNum):
+    TurnData[:, i] = Data[DataIndexS[i]:DataIndexE[i]].reshape(TurnSize,)
+    TurnTime[:, i] = np.arange(DataIndexS[i], DataIndexE[i]).reshape(
+        TurnSize,) - i * T * 720
+del Data
+# combine all data (different turns) together
+NewTime = np.sort(TurnTime.reshape((TurnSize * TurnNum,)))
+tmpIndex = np.argsort(TurnTime.reshape((TurnSize * TurnNum,)))
+tmpWave = np.reshape(TurnData, (TurnSize * TurnNum,))
+del TurnTime, TurnData
+NewWave = tmpWave[tmpIndex]
+NewTime = NewTime * 50
+del tmpIndex, tmpWave
+xx = np.arange(0.1, T * 50 * 720, 0.1)
+f = interp1d(NewTime, NewWave, kind="linear", bounds_error=False, fill_value=0)
+tmp = f(xx)
+tmp[-10000:] = tmp[-20000:-10000]
+windowSize = 100
+b = (1 / windowSize) * np.ones((windowSize,))
+a = 1
+LUTtmp = signal.filtfilt(b, a, tmp)
+N = np.floor(len(LUTtmp) / 720).astype("int32")
+LUT2 = LUTtmp[:N * 720].reshape((N, 720), order="F")
+np.save("LUT2", LUT2)
+np.save("T", T)
+del tmp, LUTtmp, NewTime, NewWave, f, b, LUT2
