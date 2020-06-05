@@ -14,7 +14,7 @@ BPM3 = np.array(load_data["BPM3"], dtype="int32")
 
 # define the peak index of the first bunch
 flagForBaseline = False
-Peak1Index = 0
+PeakIndex = 0
 for i in range(np.size(BPM1) // 100):
     if(flagForBaseline == False):
         if((max(BPM1[i * 100:(i + 1) * 100]) - min(BPM1[i * 100:(i + 1) * 100])) < 4000):
