@@ -84,13 +84,3 @@ for j in range(N):
         z1 = np.polyfit(BunchDataFit[:, i], BunchData[:, i], 1)
         BunchAmp[j,i] = z1[0]
         print(j)
-
-
-
-
-
-
-
-
-
-
