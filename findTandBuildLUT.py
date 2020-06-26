@@ -136,7 +136,7 @@ del tmp1, tmp2
 
 # find the bunch phase using correclation method
 DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                      T).astype("int32") + np.floor((BunchIndex *T))
+                      T).astype("int32") + np.floor((BunchIndex *T)).astype("int32")
 DataIndexE = DataIndexS + BunchSize
 
 Data = Data.reshape(len(Data),)

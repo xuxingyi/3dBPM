@@ -14,6 +14,10 @@ T = np.load("T.npy")
 LUT1 = np.load("LUT1.npy")
 LUT2 = np.load("LUT2.npy")
 PhaseBalance = np.load("PhaseBalance.npy")
+filling = np.zeros(720,)
+for i in range(720):
+    if(max(LUT2[:,i])>2000):
+        filling[i] = 1
 
 # define the peak index of the first bunch
 flagForBaseline = False
@@ -29,8 +33,22 @@ for i in range(np.size(BPM1) // 100):
                 break
         break
 
-BaselineIndex = np.arange(PeakIndex - 3688, PeakIndex - 688)
-Filling = np.arange(500)
+PeakIndex1 = 0
+flagForBaseline = False
+for i in range(100,np.size(BPM1) // 100):
+    if(flagForBaseline == False):
+        if((max(BPM1[i * 100:(i + 1) * 100]) - min(BPM1[i * 100:(i + 1) * 100])) < 4000):
+            flagForBaseline = True
+    elif((max(BPM1[i * 100:(i + 1) * 100]) - min(BPM1[i * 100:(i + 1) * 100])) > 4000):
+        for k in range(270):
+            if((BPM1[(i - 1) * 100 + k + 10] == min(BPM1[(i - 1) * 100 + k:(i - 1) * 100 + k + 20])) and (max(BPM1[(i - 1) * 100 + k:(i - 1) * 100 + k + 20]) - min(BPM1[(i - 1) * 100 + k:(i - 1) * 100 + k + 20])) > 4000):
+                PeakIndex1 = (i - 1) * 100 + k + 10
+                break
+        break
+
+BaselineIndex = np.arange(PeakIndex1 - 1288, PeakIndex1 - 688)
+
+Filling = np.arange(720)
 
 # define the basic number
 HarmonicNum = 720
@@ -61,33 +79,35 @@ BunchAmp = np.zeros((N, TurnNum)).astype("float64")
 TurnNum = np.floor(len(Data) / 720 / T).astype('int32') - 1
 for j in range(N):
     print(j)
-    BunchIndex = BunchIndexScan[j]
-    # define the data index for the bunch in the first turn
-    DataIndexStart = BunchIndex * BunchSize
-    # build LUT matrix for the bunch  # BunchIndex
-    tmp1 = LUT[:, BunchIndex]
-    tmp2 = np.concatenate((tmp1, tmp1, tmp1))
-    for i in range(LUTlength):
-        LutMatrix[:, i] = tmp2[np.arange(
-            LUTstart + i + 1000, LUTstart + i + 20000 + 1000, 500)]
-    # collect the bunch data using the final T value
-    DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                          T).astype("int32") + DataIndexStart
-    DataIndexE = DataIndexS + BunchSize
-    for i in range(TurnNum):
-        BunchData[:, i] = Data[np.arange(
-            DataIndexS[i], DataIndexE[i])].reshape((BunchSize,))
-        BunchPhase0[i] = (DataIndexS[i] - i * T * 720 - BunchIndex * T) * 50
-        DataMatrix = np.tile(BunchData[:, i], (LUTlength, 1)).T
-        tmp3 = np.mean(LutMatrix * DataMatrix, axis=0)
-        ind = np.argmax(tmp3)
-        #print("ind=", ind)
-        BunchDataFit[:, i] = LutMatrix[:, ind]
-        BunchPhaseFit[i] = ind * 0.1
-        BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] + \
-            (T - 40) * 50 * BunchIndex - PhaseBalance[BunchIndex]
-        z1 = np.polyfit(BunchDataFit[:, i], BunchData[:, i], 1)
-        BunchAmp[j, i] = z1[0]
+    if(filling[j] ==1):
+        BunchIndex = BunchIndexScan[j]
+        # define the data index for the bunch in the first turn
+        DataIndexStart = np.floor(BunchIndex * T).astype("int32")
+        # build LUT matrix for the bunch  # BunchIndex
+        tmp1 = LUT[:, BunchIndex]
+        tmp2 = np.concatenate((tmp1, tmp1, tmp1))
+        for i in range(LUTlength):
+            LutMatrix[:, i] = tmp2[np.arange(
+                LUTstart + i + 1000, LUTstart + i + 20000 + 1000, 500)]
+        # collect the bunch data using the final T value
+        DataIndexS = np.floor(np.arange(TurnNum) * 720 *
+                              T).astype("int32") + DataIndexStart
+        DataIndexE = DataIndexS + BunchSize
+        for i in range(TurnNum):
+            BunchData[:, i] = Data[np.arange(
+                DataIndexS[i], DataIndexE[i])].reshape((BunchSize,))
+            BunchPhase0[i] = (DataIndexS[i] - i * T * 720 - BunchIndex * T) * 50
+            DataMatrix = np.tile(BunchData[:, i], (LUTlength, 1)).T
+            tmp3 = np.mean(LutMatrix * DataMatrix, axis=0)
+            ind = np.argmax(tmp3)
+            #print("ind=", ind)
+            BunchDataFit[:, i] = LutMatrix[:, ind]
+            BunchPhaseFit[i] = ind * 0.1
+            BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] - PhaseBalance[BunchIndex]
+            z1 = np.polyfit(BunchDataFit[:, i], BunchData[:, i], 1)
+            BunchAmp[j, i] = z1[0]
+        if(BunchAmp[j,1]>0.000001 and BunchAmp[j,1]<0.2):
+            print("error")
 
 BunchPhase1 = np.copy(BunchPhase)
 BunchAmp1 = np.copy(BunchAmp)
@@ -103,33 +123,34 @@ N = len(BunchIndexScan)
 LUTlength = 2000
 LUTstart = 18000
 for j in range(N):
-    BunchIndex = BunchIndexScan[j]
-    # define the data index for the bunch in the first turn
-    DataIndexStart = BunchIndex * BunchSize
-    # build LUT matrix for the bunch  # BunchIndex
-    tmp1 = LUT[:, BunchIndex]
-    tmp2 = np.concatenate((tmp1, tmp1, tmp1))
-    for i in range(LUTlength):
-        LutMatrix[:, i] = tmp2[np.arange(
-            LUTstart + i + 1000, LUTstart + i + 20000 + 1000, 500)]
-    # collect the bunch data using the final T value
-    DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                          T).astype("int32") + DataIndexStart
-    DataIndexE = DataIndexS + BunchSize
-    for i in range(TurnNum):
-        BunchData[:, i] = Data[np.arange(
-            DataIndexS[i], DataIndexE[i])].reshape((BunchSize,))
-        BunchPhase0[i] = (DataIndexS[i] - i * T * 720 - BunchIndex * T) * 50
-        DataMatrix = np.tile(BunchData[:, i], (LUTlength, 1)).T
-        tmp3 = np.mean(LutMatrix * DataMatrix, axis=0)
-        ind = np.argmax(tmp3)
-        # print("ind=", ind)
-        BunchDataFit[:, i] = LutMatrix[:, ind]
-        BunchPhaseFit[i] = ind * 0.1
-        BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] + \
-            (T - 40) * 50 * BunchIndex - PhaseBalance[BunchIndex]
-        z1 = np.polyfit(BunchDataFit[:, i], BunchData[:, i], 1)
-        BunchAmp[j, i] = z1[0]
+    print(j)
+    if(filling[j]==1):
+        BunchIndex = BunchIndexScan[j]
+        # define the data index for the bunch in the first turn
+        DataIndexStart = np.floor(BunchIndex * T).astype("int32")
+        # build LUT matrix for the bunch  # BunchIndex
+        tmp1 = LUT[:, BunchIndex]
+        tmp2 = np.concatenate((tmp1, tmp1, tmp1))
+        for i in range(LUTlength):
+            LutMatrix[:, i] = tmp2[np.arange(
+                LUTstart + i + 1000, LUTstart + i + 20000 + 1000, 500)]
+        # collect the bunch data using the final T value
+        DataIndexS = np.floor(np.arange(TurnNum) * 720 *
+                              T).astype("int32") + DataIndexStart
+        DataIndexE = DataIndexS + BunchSize
+        for i in range(TurnNum):
+            BunchData[:, i] = Data[np.arange(
+                DataIndexS[i], DataIndexE[i])].reshape((BunchSize,))
+            BunchPhase0[i] = (DataIndexS[i] - i * T * 720 - BunchIndex * T) * 50
+            DataMatrix = np.tile(BunchData[:, i], (LUTlength, 1)).T
+            tmp3 = np.mean(LutMatrix * DataMatrix, axis=0)
+            ind = np.argmax(tmp3)
+            # print("ind=", ind)
+            BunchDataFit[:, i] = LutMatrix[:, ind]
+            BunchPhaseFit[i] = ind * 0.1
+            BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] - PhaseBalance[BunchIndex]
+            z1 = np.polyfit(BunchDataFit[:, i], BunchData[:, i], 1)
+            BunchAmp[j, i] = z1[0]
 
 BunchPhase3 = np.copy(BunchPhase)
 BunchAmp3 = np.copy(BunchAmp)
