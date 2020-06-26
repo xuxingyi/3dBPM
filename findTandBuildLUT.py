@@ -7,7 +7,7 @@ from scipy import signal
 
 
 # Get the right RF frequency information from BPM signal
-filename = "C:/Users/74506/Desktop/数据处理脚本及信号处理流程演示/BunchTrain97600uAatt03.mat"
+filename = "D:/study/数据处理脚本及信号处理流程演示/BunchTrain97600uAatt03.mat"
 load_data = sio.loadmat(filename)
 BPM1 = np.array(load_data["BPM1"], dtype="int32")
 BPM3 = np.array(load_data["BPM3"], dtype="int32")
@@ -26,7 +26,20 @@ for i in range(np.size(BPM1) // 100):
                 break
         break
 
-BaselineIndex = np.arange(PeakIndex - 3688, PeakIndex - 688)
+PeakIndex1 = 0
+flagForBaseline = False
+for i in range(100,np.size(BPM1) // 100):
+    if(flagForBaseline == False):
+        if((max(BPM1[i * 100:(i + 1) * 100]) - min(BPM1[i * 100:(i + 1) * 100])) < 4000):
+            flagForBaseline = True
+    elif((max(BPM1[i * 100:(i + 1) * 100]) - min(BPM1[i * 100:(i + 1) * 100])) > 4000):
+        for k in range(270):
+            if((BPM1[(i - 1) * 100 + k + 10] == min(BPM1[(i - 1) * 100 + k:(i - 1) * 100 + k + 20])) and (max(BPM1[(i - 1) * 100 + k:(i - 1) * 100 + k + 20]) - min(BPM1[(i - 1) * 100 + k:(i - 1) * 100 + k + 20])) > 4000):
+                PeakIndex1 = (i - 1) * 100 + k + 10
+                break
+        break
+
+BaselineIndex = np.arange(PeakIndex1 - 1288, PeakIndex1 - 688)
 #Filling = np.arange(499)
 
 
@@ -48,7 +61,7 @@ BunchSize = 40
 # define which bunch will be processed
 BunchIndex = 0
 # define the data index for the first bunch and the dirst turn
-DataIndexStart = BunchIndex * BunchSize
+DataIndexStart = BunchIndex * T
 
 # calculate T value by counting the bunch numbers
 turnNumT = np.size(Data) // 28000000
@@ -61,7 +74,7 @@ BunchDataEnd = np.zeros(BunchSize, dtype="float64")
 for j in range(N):
     TurnNum = ScanTurnNum[j]
     DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                          T).astype("int32") + DataIndexStart
+                          T).astype("int32") + np.floor(BunchIndex * T).astype("int32")
     DataIndexE = DataIndexS + BunchSize
     # collect specified bunch data together
     BunchDataFirst = Data[DataIndexS[0]:DataIndexE[0]]
@@ -79,7 +92,7 @@ TurnSize = np.floor(T * 720).astype("int32")
 TurnNum = np.floor(len(Data) / 720 / T).astype("int32") - 1
 # collect the all bunches data together using the new T value
 DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                      T).astype("int32") + DataIndexStart
+                      T).astype("int32")
 DataIndexE = DataIndexS + TurnSize
 TurnData = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
 TurnTime = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
@@ -123,7 +136,7 @@ del tmp1, tmp2
 
 # find the bunch phase using correclation method
 DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                      T).astype("int32") + DataIndexStart
+                      T).astype("int32") + np.floor((BunchIndex *T))
 DataIndexE = DataIndexS + BunchSize
 
 Data = Data.reshape(len(Data),)
@@ -154,7 +167,7 @@ TurnSize = np.floor(T * 720).astype("int32")
 TurnNum = np.floor(len(Data) / 720 / T).astype("int32") - 1
 # collect the all bunches data together using the new T value
 DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                      T).astype("int32") + DataIndexStart
+                      T).astype("int32")
 DataIndexE = DataIndexS + TurnSize
 TurnData = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
 TurnTime = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
@@ -193,7 +206,7 @@ TurnSize = np.floor(T * 720).astype("int32")
 TurnNum = np.floor(len(Data) / 720 / T).astype("int32") - 1
 # collect the all bunches data together using the new T value
 DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                      T).astype("int32") + DataIndexStart
+                      T).astype("int32")
 DataIndexE = DataIndexS + TurnSize
 TurnData = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))
 TurnTime = np.zeros((-DataIndexS[0] + DataIndexE[0], TurnNum))

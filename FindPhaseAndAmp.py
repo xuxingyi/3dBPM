@@ -6,7 +6,7 @@ from scipy.interpolate import interp1d
 from scipy import signal
 
 # Get the right RF frequency information from BPM signal
-filename = "C:/Users/74506/Desktop/数据处理脚本及信号处理流程演示/BunchTrain97600uAatt03.mat"
+filename = "D:/study/数据处理脚本及信号处理流程演示/BunchTrain97600uAatt03.mat"
 load_data = sio.loadmat(filename)
 BPM1 = np.array(load_data["BPM1"], dtype="int32")
 BPM3 = np.array(load_data["BPM3"], dtype="int32")
@@ -123,7 +123,7 @@ for j in range(N):
         DataMatrix = np.tile(BunchData[:, i], (LUTlength, 1)).T
         tmp3 = np.mean(LutMatrix * DataMatrix, axis=0)
         ind = np.argmax(tmp3)
-        #print("ind=", ind)
+        # print("ind=", ind)
         BunchDataFit[:, i] = LutMatrix[:, ind]
         BunchPhaseFit[i] = ind * 0.1
         BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] + \
