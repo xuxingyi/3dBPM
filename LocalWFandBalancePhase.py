@@ -27,10 +27,10 @@ WakeField = WakeField1 - WakeField2
 NewLUT1 = LUT1 - WakeField1
 NewLUT2 = LUT2 - WakeField2
 
-Filling = np.arange(500)
+Filling = np.arange(720)
 # find the balance phase
 N = np.floor(len(tmp) / 720).astype("int32")
-LUT = tmp[:N * 720].reshape(N, 720)
+LUT = tmp[:N * 720].reshape((N, 720),order='F')
 N = len(Filling)
 PhaseBalance = np.zeros(max(Filling)+1)
 for j in range(N):

@@ -4,12 +4,15 @@ import matplotlib.pyplot as plt
 import scipy.interpolate
 from scipy.interpolate import interp1d
 from scipy import signal
+import h5py
 
 # Get the right RF frequency information from BPM signal
-filename = "D:/study/数据处理脚本及信号处理流程演示/BunchTrain97600uAatt03.mat"
-load_data = sio.loadmat(filename)
-BPM1 = np.array(load_data["BPM1"], dtype="int32")
-BPM3 = np.array(load_data["BPM3"], dtype="int32")
+f = h5py.File(
+        r'20200220_213mA_AC_inject_6.h5',
+        'r')
+BPM1 = f['Waveforms']['Channel 1']['Channel 1Data'][()].astype("int32")
+
+BPM3 = f['Waveforms']['Channel 3']['Channel 3Data'][()].astype("int32")
 T = np.load("T.npy")
 LUT1 = np.load("LUT1.npy")
 LUT2 = np.load("LUT2.npy")
@@ -58,7 +61,7 @@ BunchSize = 40
 BunchIndexScan = Filling
 
 # copy raw data, processing pickup #1
-Data = np.array(load_data["BPM1"], dtype="int32")[PeakIndex - 10:].copy()
+Data = BPM1[PeakIndex - 10:].copy()
 LUT = LUT1
 # remove DC offset
 Baseline = np.mean(Data[BaselineIndex], dtype="float64")
@@ -113,7 +116,7 @@ BunchPhase1 = np.copy(BunchPhase)
 BunchAmp1 = np.copy(BunchAmp)
 
 # copy raw data, processing pickup #3
-Data = np.array(load_data["BPM3"], dtype="int32")[PeakIndex - 10:].copy()
+Data = BPM3[PeakIndex - 10:].copy()
 LUT = LUT2
 # remove DC offset
 Baseline = np.mean(Data[BaselineIndex], dtype="float64")

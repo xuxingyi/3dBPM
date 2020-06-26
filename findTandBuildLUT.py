@@ -4,13 +4,16 @@ import matplotlib.pyplot as plt
 import scipy.interpolate
 from scipy.interpolate import interp1d
 from scipy import signal
+import h5py
 
 
 # Get the right RF frequency information from BPM signal
-filename = "D:/study/数据处理脚本及信号处理流程演示/BunchTrain97600uAatt03.mat"
-load_data = sio.loadmat(filename)
-BPM1 = np.array(load_data["BPM1"], dtype="int32")
-BPM3 = np.array(load_data["BPM3"], dtype="int32")
+f = h5py.File(
+        r'20200220_213mA_AC_inject_6.h5',
+        'r')
+BPM1 = f['Waveforms']['Channel 1']['Channel 1Data'][()].astype("int32")
+
+BPM3 = f['Waveforms']['Channel 3']['Channel 3Data'][()].astype("int32")
 
 # define the peak index of the first bunch
 flagForBaseline = False
@@ -51,7 +54,7 @@ Data = BPM1[PeakIndex - 10:].copy()
 # remove DC offset
 Baseline = np.mean(Data[BaselineIndex], dtype="float64")
 Data = Data - Baseline
-del BPM1, BPM3
+
 
 # define the basic number
 HarmonicNum = 720
@@ -123,7 +126,7 @@ N = np.floor(len(LUTtmp) / 720).astype("int32")
 LUT = LUTtmp[:N * 720].reshape((N, 720), order="F")
 del tmp, LUTtmp, NewTime, NewWave, f, b
 
-Data = np.array(load_data["BPM1"], dtype="int32")[PeakIndex - 10:].copy()
+Data = BPM1[PeakIndex - 10:].copy()
 Baseline = np.mean(Data[BaselineIndex], dtype="float64")
 Data = Data - Baseline
 # build LUT matrix for the bunch #BunchIndex and turn #TurnNum
@@ -199,7 +202,7 @@ np.save("LUT1", LUT1)
 del tmp, LUTtmp, NewTime, NewWave, f, b, LUT1
 
 # build the final LUT of all bunches, using the final T value, pickup #3
-Data = np.array(load_data["BPM3"], dtype="int32")[PeakIndex - 10:].copy()
+Data = BPM3[PeakIndex - 10:].copy()
 Baseline = np.mean(Data[BaselineIndex], dtype="float64")
 Data = Data - Baseline
 TurnSize = np.floor(T * 720).astype("int32")
