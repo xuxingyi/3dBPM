@@ -1,6 +1,7 @@
 # calculate the local wake field and balance phase
 import scipy.io as sio
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import scipy.interpolate
 from scipy.interpolate import interp1d
@@ -9,6 +10,8 @@ from scipy import signal
 # calculate the local wake field
 LUT1 = np.load("LUT1.npy")
 LUT2 = np.load("LUT2.npy")
+LUT1_shift = np.load("LUT1_shift.npy")
+LUT2_shift = np.load("LUT2_shift.npy")
 T = np.load("T.npy")
 LUT1 = LUT1.reshape((np.size(LUT1), ), order='F')
 LUT2 = LUT2.reshape((np.size(LUT2), ), order='F')
@@ -41,7 +44,7 @@ for j in range(N):
     if(MaxInd > MinInd):
         tmp = np.abs(LUT[MinInd:MaxInd+1, BunchIndex])
         ZeroCrossing = np.argmin(tmp)
-        PhaseBalance[BunchIndex] = ZeroCrossing*0.1
+        PhaseBalance[BunchIndex] = (ZeroCrossing+MinInd)*0.1 - LUT1_shift[BunchIndex]
     else:
         PhaseBalance[BunchIndex] = 0
     del MinInd,MaxInd

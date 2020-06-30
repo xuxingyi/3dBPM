@@ -16,6 +16,8 @@ BPM3 = f['Waveforms']['Channel 3']['Channel 3Data'][()].astype("int32")
 T = np.load("T.npy")
 LUT1 = np.load("LUT1.npy")
 LUT2 = np.load("LUT2.npy")
+LUT1_shift = np.load("LUT1_shift.npy")
+LUT2_shift = np.load("LUT2_shift.npy")
 PhaseBalance = np.load("PhaseBalance.npy")
 filling = np.zeros(720,)
 for i in range(720):
@@ -106,7 +108,7 @@ for j in range(N):
             #print("ind=", ind)
             BunchDataFit[:, i] = LutMatrix[:, ind]
             BunchPhaseFit[i] = ind * 0.1
-            BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] - PhaseBalance[BunchIndex]
+            BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] - PhaseBalance[BunchIndex] + LUT1_shift[BunchIndex]
             z1 = np.polyfit(BunchDataFit[:, i], BunchData[:, i], 1)
             BunchAmp[j, i] = z1[0]
         if(BunchAmp[j,1]>0.000001 and BunchAmp[j,1]<0.2):
@@ -151,7 +153,7 @@ for j in range(N):
             # print("ind=", ind)
             BunchDataFit[:, i] = LutMatrix[:, ind]
             BunchPhaseFit[i] = ind * 0.1
-            BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] - PhaseBalance[BunchIndex]
+            BunchPhase[i, j] = BunchPhase0[i] - BunchPhaseFit[i] - PhaseBalance[BunchIndex] + LUT2_shift[BunchIndex]
             z1 = np.polyfit(BunchDataFit[:, i], BunchData[:, i], 1)
             BunchAmp[j, i] = z1[0]
 

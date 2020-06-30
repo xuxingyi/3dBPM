@@ -124,6 +124,7 @@ a = 1
 LUTtmp = signal.filtfilt(b, a, tmp)
 N = np.floor(len(LUTtmp) / 720).astype("int32")
 LUT = LUTtmp[:N * 720].reshape((N, 720), order="F")
+LUT_shift = np.arange(720) * (len(LUTtmp) / 720 - np.floor(len(LUTtmp) / 720)) * 0.1
 del tmp, LUTtmp, NewTime, NewWave, f, b
 
 Data = BPM1[PeakIndex - 10:].copy()
@@ -139,7 +140,7 @@ del tmp1, tmp2
 
 # find the bunch phase using correclation method
 DataIndexS = np.floor(np.arange(TurnNum) * 720 *
-                      T).astype("int32") + np.floor((BunchIndex *T)).astype("int32")
+                      T).astype("int32") + np.floor((BunchIndex * T)).astype("int32")
 DataIndexE = DataIndexS + BunchSize
 
 Data = Data.reshape(len(Data),)
@@ -157,7 +158,7 @@ for i in range(TurnNum):
     print(i)
 
 BunchPhaseFit = BunchPhaseFit * 0.1
-BunchPhase = BunchPhase0 - BunchPhaseFit + 1000
+BunchPhase = BunchPhase0 - BunchPhaseFit + 1000 + LUT_shift[BunchIndex]
 x = np.arange(len(BunchPhase))
 z1 = np.polyfit(x, BunchPhase, 1)
 T = T + z1[0] / 720 / 50
@@ -198,8 +199,10 @@ a = 1
 LUTtmp = signal.filtfilt(b, a, tmp)
 N = np.floor(len(LUTtmp) / 720).astype("int32")
 LUT1 = LUTtmp[:N * 720].reshape((N, 720), order="F")
+LUT1_shift = np.arange(720) * (len(LUTtmp) / 720 - np.floor(len(LUTtmp) / 720)) * 0.1
 np.save("LUT1", LUT1)
-del tmp, LUTtmp, NewTime, NewWave, f, b, LUT1
+np.save("LUT1_shift",LUT1_shift)
+del tmp, LUTtmp, NewTime, NewWave, f, b, LUT1 , LUT1_shift
 
 # build the final LUT of all bunches, using the final T value, pickup #3
 Data = BPM3[PeakIndex - 10:].copy()
@@ -236,6 +239,8 @@ a = 1
 LUTtmp = signal.filtfilt(b, a, tmp)
 N = np.floor(len(LUTtmp) / 720).astype("int32")
 LUT2 = LUTtmp[:N * 720].reshape((N, 720), order="F")
+LUT2_shift = np.arange(720) * (len(LUTtmp) / 720 - np.floor(len(LUTtmp) / 720)) * 0.1
 np.save("LUT2", LUT2)
+np.save("LUT2_shift", LUT2_shift)
 np.save("T", T)
 del tmp, LUTtmp, NewTime, NewWave, f, b, LUT2
